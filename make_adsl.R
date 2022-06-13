@@ -24,4 +24,13 @@ adsl <- sdtm$dm %>%
                group_by(USUBJID) %>%
                summarise(CUMDOSE=sum(EXDOSE*dur), TRTDUR=sum(dur)) %>%
                mutate(AVGDD=CUMDOSE/TRTDUR)
-               ))
+               )) %>%
+  left_join(sdtm$vs %>%
+              select(USUBJID, VISITNUM, VSTESTCD, VSSTRESN) %>%
+              filter(VISITNUM %in% c(1,3) & VSTESTCD %in% c('HEIGHT', 'WEIGHT')) %>%
+              pivot_wider(id_cols = c(USUBJID, VISITNUM), names_from = VSTESTCD, values_from = VSSTRESN) %>%
+              group_by(USUBJID) %>%
+              fill(HEIGHT, WEIGHT) %>%
+              filter(row_number()==n()) %>%
+              mutate(BMIBL = WEIGHT/((HEIGHT/100) * (HEIGHT/100)), WEIGHTBL=WEIGHT, HEIGHTBL=HEIGHT) %>%
+              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL))
