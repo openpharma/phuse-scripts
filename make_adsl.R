@@ -11,7 +11,8 @@ adsl <- sdtm$dm %>%
          RFENDT=as_date(RFENDTC)
          ) %>%
   select(-c("DOMAIN", "RFXSTDTC", "RFXENDTC", "RFICDTC", "RFPENDTC", "DTHDTC", "ARMCD", "ACTARMCD", "ACTARM", "COUNTRY",  "DMDTC", "DMDY")) %>%
-  right_join(pivot_wider(data = sdtm$suppdm, id_cols = USUBJID, names_from = QNAM, values_from = QVAL, values_fill = 'N')) %>%
+  right_join(pivot_wider(data = sdtm$suppdm, id_cols = USUBJID, names_from = QNAM, values_from = QVAL, values_fill = 'N'),
+             by = 'USUBJID') %>%
   rename(SAFFL=SAFETY, ITTFL=ITT, EFFFL=EFFICACY, COMP8FL=COMPLT8, COMP16FL=COMPLT16, COMP24FL=COMPLT24 ) %>%
   left_join((sdtm$ds %>%
                filter(DSSEQ==1) %>%
@@ -24,7 +25,7 @@ adsl <- sdtm$dm %>%
                group_by(USUBJID) %>%
                summarise(CUMDOSE=sum(EXDOSE*dur), TRTDUR=sum(dur)) %>%
                mutate(AVGDD=CUMDOSE/TRTDUR)
-               )) %>%
+               ), by='USUBJID') %>%
   left_join(sdtm$vs %>%
               select(USUBJID, VISITNUM, VSTESTCD, VSSTRESN) %>%
               filter(VISITNUM %in% c(1,3) & VSTESTCD %in% c('HEIGHT', 'WEIGHT')) %>%
@@ -33,4 +34,10 @@ adsl <- sdtm$dm %>%
               fill(HEIGHT, WEIGHT) %>%
               filter(row_number()==n()) %>%
               mutate(BMIBL = WEIGHT/((HEIGHT/100) * (HEIGHT/100)), WEIGHTBL=WEIGHT, HEIGHTBL=HEIGHT) %>%
-              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL))
+              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL),
+            by='USUBJID') %>% 
+  left_join(sdtm$qs %>% 
+              filter(QSCAT=='MINI-MENTAL STATE') %>% 
+              group_by(USUBJID) %>%
+              summarise(MMSETOT=sum(QSSTRESN))
+            )
