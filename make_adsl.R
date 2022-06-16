@@ -18,14 +18,14 @@ adsl <- sdtm$dm %>%
                filter(DSSEQ==1) %>%
                select(USUBJID, DSDECOD) %>%
                mutate(DCREASCD=str_to_title(DSDECOD)) %>%
-               rename(DCDECOD=DSDECOD)
-               ), by='USUBJID') %>%
+               rename(DCDECOD=DSDECOD)),
+            by='USUBJID') %>%
   left_join((sdtm$ex %>%
                mutate(dur=1+EXENDY-EXSTDY) %>%
                group_by(USUBJID) %>%
-               summarise(CUMDOSE=coalesce(sum(EXDOSE*dur),0)) #%>% #, TRTDUR=coalesce(sum(dur), 0)) %>%
-               # mutate(AVGDD=coalesce(CUMDOSE/TRTDUR), 0)
-               ), by='USUBJID') %>%
+               summarise(CUMDOSE=coalesce(sum(EXDOSE*dur),0),
+                         AVGDD=coalesce(CUMDOSE/sum(dur), 0))),
+            by='USUBJID') %>%
   left_join(sdtm$vs %>%
               select(USUBJID, VISITNUM, VSTESTCD, VSSTRESN) %>%
               filter(VISITNUM %in% c(1,3) & VSTESTCD %in% c('HEIGHT', 'WEIGHT')) %>%
@@ -34,4 +34,10 @@ adsl <- sdtm$dm %>%
               fill(HEIGHT, WEIGHT) %>%
               filter(row_number()==n()) %>%
               mutate(BMIBL = WEIGHT/((HEIGHT/100) * (HEIGHT/100)), WEIGHTBL=WEIGHT, HEIGHTBL=HEIGHT) %>%
-              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL), by='USUBJID')
+              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL),
+            by='USUBJID') %>%
+  left_join(sdtm$qs %>%
+              filter(QSCAT=='MINI-MENTAL STATE') %>%
+              group_by(USUBJID) %>%
+              summarise(MMSETOT=sum(QSSTRESN)),
+            by='USUBJID')
