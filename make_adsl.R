@@ -20,11 +20,11 @@ adsl <- sdtm$dm %>%
                mutate(DCREASCD=str_to_title(DSDECOD)) %>%
                rename(DCDECOD=DSDECOD)),
             by='USUBJID') %>%
-  left_join((sdtm$ex %>%
-               mutate(dur=1+EXENDY-EXSTDY) %>%
+  left_join((left_join(sdtm$dm, sdtm$ex, by='USUBJID') %>% mutate(trtend=coalesce(as_date(EXENDTC), as_date(RFXENDTC))) %>%
+               mutate(dur=1+time_length(trtend-as_date(EXSTDTC), unit = 'days')) %>%
                group_by(USUBJID) %>%
                summarise(CUMDOSE=coalesce(sum(EXDOSE*dur),0),
-                         AVGDD=coalesce(CUMDOSE/sum(dur), 0))),
+                         AVGDD=round(coalesce(CUMDOSE/sum(dur), 0), digits=1))),
             by='USUBJID') %>%
   left_join(sdtm$vs %>%
               select(USUBJID, VISITNUM, VSTESTCD, VSSTRESN) %>%
@@ -33,7 +33,7 @@ adsl <- sdtm$dm %>%
               group_by(USUBJID) %>%
               fill(HEIGHT, WEIGHT) %>%
               filter(row_number()==n()) %>%
-              mutate(BMIBL = WEIGHT/((HEIGHT/100) * (HEIGHT/100)), WEIGHTBL=WEIGHT, HEIGHTBL=HEIGHT) %>%
+              mutate(BMIBL = round(WEIGHT/((HEIGHT/100) * (HEIGHT/100)), 1), WEIGHTBL=round(WEIGHT, 1),  HEIGHTBL=round(HEIGHT, 1)) %>%
               select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL),
             by='USUBJID') %>%
   left_join(sdtm$qs %>%
