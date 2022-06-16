@@ -14,17 +14,17 @@ adsl <- sdtm$dm %>%
   right_join(pivot_wider(data = sdtm$suppdm, id_cols = USUBJID, names_from = QNAM, values_from = QVAL, values_fill = 'N'),
              by='USUBJID') %>%
   rename(SAFFL=SAFETY, ITTFL=ITT, EFFFL=EFFICACY, COMP8FL=COMPLT8, COMP16FL=COMPLT16, COMP24FL=COMPLT24 ) %>%
-  left_join((sdtm$ds %>%
+  left_join(sdtm$ds %>%
                filter(DSSEQ==1) %>%
                select(USUBJID, DSDECOD) %>%
                mutate(DCREASCD=str_to_title(DSDECOD)) %>%
-               rename(DCDECOD=DSDECOD)),
+               rename(DCDECOD=DSDECOD),
             by='USUBJID') %>%
-  left_join((left_join(sdtm$dm, sdtm$ex, by='USUBJID') %>% mutate(trtend=coalesce(as_date(EXENDTC), as_date(RFXENDTC))) %>%
+  left_join(left_join(sdtm$dm, sdtm$ex, by='USUBJID') %>% mutate(trtend=coalesce(as_date(EXENDTC), as_date(RFXENDTC))) %>%
                mutate(dur=1+time_length(trtend-as_date(EXSTDTC), unit = 'days')) %>%
                group_by(USUBJID) %>%
                summarise(CUMDOSE=coalesce(sum(EXDOSE*dur),0),
-                         AVGDD=round(coalesce(CUMDOSE/sum(dur), 0), digits=1))),
+                         AVGDD=round(coalesce(CUMDOSE/sum(dur), 0), digits=1)),
             by='USUBJID') %>%
   left_join(sdtm$vs %>%
               select(USUBJID, VISITNUM, VSTESTCD, VSSTRESN) %>%
@@ -40,4 +40,9 @@ adsl <- sdtm$dm %>%
               filter(QSCAT=='MINI-MENTAL STATE') %>%
               group_by(USUBJID) %>%
               summarise(MMSETOT=sum(QSSTRESN)),
+            by='USUBJID') %>%
+  left_join(sdtm$sc %>%
+              select(USUBJID, SCSTRESN) %>%
+              rename(EDUCLVL=SCSTRESN),
             by='USUBJID')
+
