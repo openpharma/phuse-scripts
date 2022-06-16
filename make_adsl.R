@@ -7,7 +7,7 @@ library(lubridate)
 adsl <- sdtm$dm %>%
   mutate(TRTSDT=as_date(RFXSTDTC),
          TRTEDT=coalesce(as_date(RFXENDTC), as_date(RFENDTC)),
-         TRTDUR=1+time_length(TRTEDT-TRTSDT, unit='days'),
+         TRTDUR=1+time_length(interval(TRTSDT, TRTEDT), unit='days'),
          RFENDT=as_date(RFENDTC)
          ) %>%
   select(-c("DOMAIN", "RFXSTDTC", "RFXENDTC", "RFICDTC", "RFPENDTC", "DTHDTC", "ARMCD", "ACTARMCD", "ACTARM", "COUNTRY",  "DMDTC", "DMDY")) %>%
@@ -21,7 +21,7 @@ adsl <- sdtm$dm %>%
                rename(DCDECOD=DSDECOD),
             by='USUBJID') %>%
   left_join(left_join(sdtm$dm, sdtm$ex, by='USUBJID') %>% mutate(trtend=coalesce(as_date(EXENDTC), as_date(RFXENDTC))) %>%
-               mutate(dur=1+time_length(trtend-as_date(EXSTDTC), unit = 'days')) %>%
+               mutate(dur=1+time_length(interval(as_date(EXSTDTC), trtend), unit = 'days')) %>%
                group_by(USUBJID) %>%
                summarise(CUMDOSE=coalesce(sum(EXDOSE*dur),0),
                          AVGDD=round(coalesce(CUMDOSE/sum(dur), 0), digits=1)),
@@ -44,5 +44,10 @@ adsl <- sdtm$dm %>%
   left_join(sdtm$sc %>%
               select(USUBJID, SCSTRESN) %>%
               rename(EDUCLVL=SCSTRESN),
-            by='USUBJID')
+            by='USUBJID') %>%
+  left_join(sdtm$mh %>%
+              filter(MHCAT=='PRIMARY DIAGNOSIS') %>%
+              mutate(DISONSDT=as_date(MHSTDTC)) %>%
+              select(USUBJID, DISONSDT)) %>%
+  mutate(DURDIS=round(time_length(interval(DISONSDT, as_date(RFSTDTC)), unit = 'month'),1))
 
