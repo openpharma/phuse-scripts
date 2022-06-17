@@ -8,7 +8,8 @@ adsl <- sdtm$dm %>%
   mutate(TRTSDT=as_date(RFXSTDTC),
          TRTEDT=coalesce(as_date(RFXENDTC), as_date(RFENDTC)),
          TRTDUR=1+time_length(interval(TRTSDT, TRTEDT), unit='days'),
-         RFENDT=as_date(RFENDTC)
+         RFENDT=as_date(RFENDTC),
+         AGEGR1=cut(AGE, breaks = c(0,65, 80, Inf), labels = c('<65', '65-80', '>80'))
          ) %>%
   select(-c("DOMAIN", "RFXSTDTC", "RFXENDTC", "RFICDTC", "RFPENDTC", "DTHDTC", "ARMCD", "ACTARMCD", "ACTARM", "COUNTRY",  "DMDTC", "DMDY")) %>%
   right_join(pivot_wider(data = sdtm$suppdm, id_cols = USUBJID, names_from = QNAM, values_from = QVAL, values_fill = 'N'),
@@ -35,8 +36,11 @@ adsl <- sdtm$dm %>%
               group_by(USUBJID) %>%
               fill(HEIGHT, WEIGHT) %>%
               filter(row_number()==n()) %>%
-              mutate(BMIBL = round(WEIGHT/((HEIGHT/100) * (HEIGHT/100)), 1), WEIGHTBL=round(WEIGHT, 1),  HEIGHTBL=round(HEIGHT, 1)) %>%
-              select(USUBJID, BMIBL, WEIGHTBL, HEIGHTBL),
+              mutate(BMIBL = round(WEIGHT/((HEIGHT/100) * (HEIGHT/100)), 1),
+                     WEIGHTBL=round(WEIGHT, 1),
+                     HEIGHTBL=round(HEIGHT, 1),
+                     BMIBLGR1=cut(BMIBL, breaks=c(0,25,30,Inf), labels=c('<25', '25-30', '>=30'))) %>%
+              select(USUBJID, BMIBL, BMIBLGR1, WEIGHTBL, HEIGHTBL),
             by='USUBJID') %>%
   left_join(sdtm$qs %>%
               filter(QSCAT=='MINI-MENTAL STATE') %>%
@@ -51,5 +55,6 @@ adsl <- sdtm$dm %>%
               filter(MHCAT=='PRIMARY DIAGNOSIS') %>%
               mutate(DISONSDT=as_date(MHSTDTC)) %>%
               select(USUBJID, DISONSDT)) %>%
-  mutate(DURDIS=round(time_length(interval(DISONSDT, as_date(RFSTDTC)), unit = 'month'),1))
+  mutate(DURDIS=round(time_length(interval(DISONSDT, as_date(RFSTDTC)), unit = 'month'),1),
+         DURDSGR1=cut(DURDIS, breaks=c(0, 12, Inf), labels=c('<12', '>=12')))
 
