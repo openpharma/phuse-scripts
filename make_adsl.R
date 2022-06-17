@@ -16,9 +16,11 @@ adsl <- sdtm$dm %>%
   rename(SAFFL=SAFETY, ITTFL=ITT, EFFFL=EFFICACY, COMP8FL=COMPLT8, COMP16FL=COMPLT16, COMP24FL=COMPLT24 ) %>%
   left_join(sdtm$ds %>%
               filter(DSSEQ==1) %>%
-              mutate(DCREASCD = str_to_title(if_else(DSTERM=='PROTOCOL ENTRY CRITERIA NOT MET', 'I/E NOT MET', DSDECOD))) %>%
+              mutate(DCREASCD = if_else(DSTERM=='PROTOCOL ENTRY CRITERIA NOT MET', 'I/E NOT MET', DSDECOD)) %>%
+              mutate(DCREASCD = str_to_title(recode(DCREASCD, `STUDY TERMINATED BY SPONSOR` = 'Sponsor Decision',
+                                                    `WITHDRAWAL BY SUBJECT` = 'Withdrew Consent'))) %>%
               select(USUBJID, DSDECOD, DCREASCD) %>%
-              rename(DCDECOD=DSDECOD),
+              rename(DCDECOD = DSDECOD),
             by='USUBJID') %>%
   left_join(left_join(sdtm$dm, sdtm$ex, by='USUBJID') %>% mutate(trtend=coalesce(as_date(EXENDTC), as_date(RFXENDTC))) %>%
                mutate(dur=1+time_length(interval(as_date(EXSTDTC), trtend), unit = 'days')) %>%
