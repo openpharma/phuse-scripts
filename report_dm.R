@@ -1,3 +1,6 @@
+library(dplyr)
+library(rtables)
+
 s_summary <- function(x) {
   if (is.numeric(x)) {
     in_rows(
@@ -19,7 +22,7 @@ s_summary <- function(x) {
 myfun <- function(x) {
   vs <- table(x)
   sumall <- sum(vs)
-  do.call(in_rows, lapply(as.list(vs), function(y) rcell(c(y, y/sumall), format = "xx (xx.xx%)")))
+  do.call(in_rows, lapply(as.list(vs), function(y) rcell(c(y, y/sumall), format = "xx (xx.x%)")))
 }
 
 layout <- basic_table(title = "Demographic Baseline Characteristics: Overview",
@@ -28,10 +31,5 @@ layout <- basic_table(title = "Demographic Baseline Characteristics: Overview",
   add_overall_col("Overall") %>% 
   add_colcounts() %>%
   analyze(c("AGE"), s_summary) %>% 
-  analyze("SEX", myfun)
-  # split_rows_by("SEX") %>% 
-  # summarize_row_groups(cfun = function(df, labelstr, .N_col, ...){
-  #   in_rows( rcell(nrow(df) * c(1, 1/.N_col), format = "xx (xx.xx%)"),
-  #            .labels = paste0(labelstr, ": count (perc.)"))
-  # })
+  analyze(c("AGEGR1", "SEX", "ETHNIC"), myfun)
 build_table(layout, adsl) 
