@@ -1,5 +1,6 @@
 library(dplyr)
 library(rtables)
+library(stringr)
 
 s_summary <- function(x) {
   if (is.numeric(x)) {
@@ -30,6 +31,6 @@ layout <- basic_table(title = "Demographic Baseline Characteristics: Overview",
   split_cols_by(var = "ARM") %>%
   add_overall_col("Overall") %>% 
   add_colcounts() %>%
-  analyze(c("AGE"), s_summary) %>% 
-  analyze(c("AGEGR1", "SEX", "ETHNIC"), myfun)
-build_table(layout, adsl) 
+  analyze(c("AGE"), var_labels=c("Age"), afun=s_summary) %>% 
+  analyze(c("AGEGR1", "SEX", "ETHNIC"), var_labels = c("Age Group", "Sex", "Ethnicity"), afun=myfun)
+build_table(layout, adsl %>% mutate(ETHNIC=str_to_title(ETHNIC))) 
