@@ -56,5 +56,10 @@ adsl <- sdtm$dm %>%
               mutate(DISONSDT=as_date(MHSTDTC)) %>%
               select(USUBJID, DISONSDT)) %>%
   mutate(DURDIS=round(time_length(interval(DISONSDT, as_date(RFSTDTC)), unit = 'month'),1),
-         DURDSGR1=cut(DURDIS, breaks=c(0, 12, Inf), labels=c('<12', '>=12')))
-
+         DURDSGR1=cut(DURDIS, breaks=c(0, 12, Inf), labels=c('<12', '>=12')),
+         across(ends_with('FL'), function(x) if_else(x=='Y', TRUE, FALSE)),
+         SEX=factor(SEX),
+         RACE=factor(RACE),
+         ETHNIC=factor(str_to_title(ETHNIC)),
+         ARM=factor(str_to_title(ARM))
+         )
